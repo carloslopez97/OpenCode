@@ -2,249 +2,65 @@
 
 ## Purpose
 
-These rules enforce clean architecture principles and prevent common architectural anti-patterns.
+These rules preserve clear boundaries, dependency direction, and modular change.
 
-## Rule 1: Layer Independence
+## Core Rules
 
-**Requirement**: Domain layer must have no external dependencies.
+### 1. Keep Dependencies Pointing Inward
 
-**Implementation**:
-- Domain layer contains only business logic
-- No imports from infrastructure, application, or presentation
-- Use interfaces for external dependencies
+- domain code must not depend on infrastructure or presentation concerns
+- application code may depend on domain
+- infrastructure adapts to domain and application contracts
+- presentation should call application-level interfaces, not business internals directly
 
-**Anti-pattern**:
-```typescript
-// BAD - Domain imports infrastructure
-import { Entity } from 'typeorm';
-import { DatabaseService } from './infrastructure';
+### 2. Keep Boundaries Explicit
 
-@Entity()
-export class Order { } // TypeORM in domain
-```
+- define clear module ownership
+- use interfaces or contracts at external boundaries
+- do not hide cross-boundary coupling inside convenience abstractions
 
-**Correct**:
-```typescript
-// GOOD - Plain domain object
-export class Order {
-  constructor(
-    public readonly id: OrderId,
-    public readonly items: OrderItem[]
-  ) {}
-}
-```
+### 3. Keep Business Logic Out of Framework Edges
 
-## Rule 2: Dependency Direction
+- controllers, handlers, and transport adapters should stay thin
+- orchestration belongs in use cases or application services
+- business rules belong in domain or application layers
 
-**Requirement**: Dependencies must point inward toward domain.
+### 4. Avoid Oversized Units
 
-**Implementation**:
-- Application layer depends on domain
-- Infrastructure depends on application
-- Presentation depends on application
+- classes, modules, and services should have one clear reason to change
+- split code that mixes unrelated responsibilities
+- avoid central coordinators that accumulate unrelated behavior
 
-**Anti-pattern**:
-```typescript
-// BAD - Infrastructure in application use case
-import { MongoClient } from 'mongodb';
+### 5. Design for Replaceable Infrastructure
 
-class CreateOrderUseCase {
-  async execute(dto) {
-    const db = new MongoClient().connect();
-    await db.collection('orders').insertOne(dto);
-  }
-}
-```
+- persistence, messaging, caching, and third-party integrations should be swappable behind stable contracts
+- infrastructure details must not leak into core domain decisions
 
-**Correct**:
-```typescript
-// GOOD - Interface dependency
-class CreateOrderUseCase {
-  constructor(private orderRepo: IOrderRepository) {}
-  
-  async execute(dto) {
-    await this.orderRepo.save(dto);
-  }
-}
-```
+### 6. Make Risky Coupling Visible
 
-## Rule 3: No God Classes
+Call out explicitly when a change introduces:
 
-**Requirement**: Classes must have single responsibility.
+- new runtime dependencies
+- data migration requirements
+- cross-module write coordination
+- rollout or rollback complexity
 
-**Implementation**:
-- Max 200 lines per class
-- Max 10 methods per class
-- Clear, focused purpose
+## Review Checks
 
-**Anti-pattern**:
-```typescript
-// BAD - God class
-class Manager {
-  createUser() {}
-  deleteUser() {}
-  createOrder() {}
-  cancelOrder() {}
-  processPayment() {}
-  sendEmail() {}
-  generateReport() {}
-  // ... 50 more methods
-}
-```
+Before considering a design or implementation acceptable, verify:
 
-**Correct**:
-```typescript
-// GOOD - Focused classes
-class UserService { createUser, deleteUser }
-class OrderService { createOrder, cancelOrder }
-class PaymentService { processPayment }
-class NotificationService { sendEmail }
-class ReportingService { generateReport }
-```
+- dependency direction is still correct
+- ownership boundaries remain clear
+- important contracts are explicit and testable
+- the change can be delivered incrementally
+- infrastructure concerns have not leaked into core logic
 
-## Rule 4: Repository Pattern
+## Anti-Patterns
 
-**Requirement**: Data access must use repository pattern.
+Avoid:
 
-**Implementation**:
-- Domain defines repository interfaces
-- Infrastructure implements repositories
-- Use dependency injection
-
-```typescript
-// Domain - Interface only
-interface IOrderRepository {
-  findById(id: OrderId): Promise<Order>;
-  save(order: Order): Promise<void>;
-  findByCustomer(customerId: CustomerId): Promise<Order[]>;
-}
-
-// Infrastructure - Implementation
-class OrderRepository implements IOrderRepository {
-  constructor(private db: Database) {}
-  
-  async findById(id: OrderId): Promise<Order> {
-    const row = await this.db.query('SELECT * FROM orders WHERE id = ?', [id]);
-    return Order.fromRow(row);
-  }
-}
-```
-
-## Rule 5: Use Case Pattern
-
-**Requirement**: Business logic orchestration through use cases.
-
-**Implementation**:
-- Each use case is a single operation
-- Use case receives input, returns output
-- No UI concerns in use case
-
-```typescript
-class CreateOrderUseCase {
-  constructor(
-    private orderRepo: IOrderRepository,
-    private eventBus: IEventBus,
-    private inventoryService: IInventoryService
-  ) {}
-  
-  async execute(input: CreateOrderInput): Promise<CreateOrderOutput> {
-    await this.inventoryService.reserve(input.items);
-    const order = Order.create(input);
-    await this.orderRepo.save(order);
-    await this.eventBus.publish(new OrderCreatedEvent(order));
-    return { orderId: order.id };
-  }
-}
-```
-
-## Rule 6: Value Objects
-
-**Requirement**: Use value objects for primitive obsession.
-
-**Implementation**:
-- Replace primitive types with meaningful value objects
-- Immutable
-- Self-validating
-
-**Anti-pattern**:
-```typescript
-// BAD - Primitives everywhere
-function calculateTotal(price: number, quantity: number, currency: string): number {
-  // What if price is negative? What currency?
-}
-```
-
-**Correct**:
-```typescript
-// GOOD - Value objects
-class Money {
-  constructor(
-    public readonly amount: number,
-    public readonly currency: string
-  ) {
-    if (amount < 0) throw new InvalidMoneyError();
-  }
-}
-
-function calculateTotal(price: Money, quantity: number): Money {
-  return new Money(price.amount * quantity, price.currency);
-}
-```
-
-## Rule 7: Module Organization
-
-**Requirement**: Clear module boundaries.
-
-**Implementation**:
-```
-src/
-├── domain/           # Business logic, no dependencies
-│   ├── entities/
-│   ├── valueObjects/
-│   ├── repositories/ # Interfaces only
-│   └── services/
-├── application/     # Use cases, orchestrates domain
-│   ├── useCases/
-│   ├── interfaces/
-│   ├── dtos/
-│   └── services/
-├── infrastructure/  # External concerns
-│   ├── persistence/
-│   ├── external/
-│   └── config/
-└── presentation/    # API, UI
-    ├── controllers/
-    └── handlers/
-```
-
-## Rule 8: Cross-Layer Communication
-
-**Requirement**: Use events for loose coupling.
-
-**Implementation**:
-- Use event bus for cross-boundary communication
-- Avoid direct dependencies between modules
-- Async for non-critical operations
-
-```typescript
-// Use event for order completion
-class OrderService {
-  async completeOrder(orderId: OrderId) {
-    await this.orderRepo.updateStatus(orderId, OrderStatus.Completed);
-    await this.eventBus.publish(new OrderCompletedEvent(orderId));
-  }
-}
-
-// Listener in different module
-class NotificationHandler {
-  async handle(event: OrderCompletedEvent) {
-    await this.emailService.sendOrderConfirmation(event.orderId);
-  }
-}
-```
-
-## Enforcement
-
-- Code review must verify architecture compliance
-- Architecture tests should validate layer structure
-- Automated checks for dependency direction
+- domain code importing framework or persistence libraries
+- controllers containing business rules
+- direct database access from use-case orchestration without an abstraction boundary
+- shared utility layers that become hidden coupling points
+- module designs that require coordinated edits everywhere

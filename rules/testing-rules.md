@@ -2,250 +2,81 @@
 
 ## Purpose
 
-These rules ensure comprehensive, maintainable test coverage.
+These rules keep testing focused on confidence, regression prevention, and maintainability.
 
-## Rule 1: Test Coverage Targets
+## Core Rules
 
-**Requirement**: Minimum coverage levels.
+### 1. Match Test Depth to Risk
+
+- use unit tests for deterministic business logic
+- use integration tests for contracts, wiring, and persistence behavior
+- use end-to-end tests only for critical user or system journeys
+- do not add broad test suites when a narrower layer can prove the behavior safely
+
+### 2. Test Behaviors, Not Internals
+
+- each test should prove one behavior, not one assertion
+- multiple assertions are acceptable when they validate the same behavior
+- avoid testing private state, implementation details, or incidental call order unless that behavior is the contract
+
+### 3. Cover Critical Paths and Edge Cases
+
+Always consider:
+
+- happy path behavior
+- boundary conditions
+- failure paths
+- previously broken behavior that needs regression coverage
+
+### 4. Keep Tests Deterministic
+
+- no arbitrary sleeps or timing-dependent expectations
+- isolate shared state between tests
+- mock only the boundaries needed to keep the test reliable and focused
+- prefer real integrations over mocks when the contract itself is the risk
+
+### 5. Keep Tests Maintainable
+
+- use descriptive names that explain the behavior being verified
+- prefer builders or fixtures for complex setup
+- keep setup proportional to the behavior under test
+- remove redundant tests that do not increase confidence
+
+## Coverage Guidance
+
+Coverage is a signal, not the goal.
+
+Recommended targets:
 
 | Layer | Target |
 |-------|--------|
-| Domain | 90%+ |
-| Application | 80%+ |
-| Infrastructure | 60%+ |
-| Overall | 70%+ |
+| Domain | 85%+ |
+| Application | 75%+ |
+| Infrastructure | 50%+ |
+| Overall | 65%+ |
 
-**Implementation**:
-- Run coverage reports on every build
-- Set coverage thresholds in CI
-- Flag coverage drops
+Use risk and change impact to decide where deeper coverage is required.
 
-## Rule 2: Test Naming
+## Verification Expectations
 
-**Requirement**: Descriptive, intent-revealing names.
+For behavior-changing work, testing should make clear:
 
-**Implementation**:
-```typescript
-// BAD
-test('test1', () => { });
-test('create', () => { });
+- what behavior is now proven
+- what test level was used and why
+- what meaningful gaps still remain
 
-// GOOD - Describes expected behavior
-test('should throw ValidationError when email format is invalid', () => { });
-test('should create order with pending status when valid', () => { });
-test('should reject order when inventory insufficient', () => { });
-```
+## Anti-Patterns
 
-## Rule 3: One Assertion Per Test
+Avoid:
 
-**Requirement**: Each test verifies one behavior.
-
-**Implementation**:
-```typescript
-// BAD - Multiple assertions
-test('should create order', () => {
-  const order = createOrder(validData);
-  expect(order.id).toBeDefined();
-  expect(order.status).toBe('pending');
-  expect(order.items.length).toBe(1);
-  expect(order.total).toBe(100);
-});
-
-// GOOD - Separate tests
-test('should generate unique id', () => { /* ... */ });
-test('should set status to pending', () => { /* ... */ });
-test('should include items in order', () => { /* ... */ });
-test('should calculate total from items', () => { /* ... */ });
-```
-
-## Rule 4: AAA Pattern
-
-**Requirement**: Structure tests with Arrange-Act-Assert.
-
-**Implementation**:
-```typescript
-describe('calculateTotal', () => {
-  it('should sum item prices', () => {
-    // Arrange
-    const items = [
-      new OrderItem('Item 1', 100),
-      new OrderItem('Item 2', 200)
-    ];
-    
-    // Act
-    const total = calculateTotal(items);
-    
-    // Assert
-    expect(total).toBe(300);
-  });
-});
-```
-
-## Rule 5: Test Data Builders
-
-**Requirement**: Use builders for complex test data.
-
-**Implementation**:
-```typescript
-// BAD - Inline data
-const order = {
-  id: 'order-1',
-  customerId: 'cust-1',
-  items: [
-    { productId: 'prod-1', quantity: 2, price: 50 }
-  ],
-  status: 'pending'
-};
-
-// GOOD - Builder pattern
-class OrderBuilder {
-  private data = {
-    id: 'order-1',
-    customerId: 'cust-1',
-    items: [],
-    status: OrderStatus.Pending
-  };
-  
-  withItems(items: OrderItem[]): this {
-    this.data.items = items;
-    return this;
-  }
-  
-  withStatus(status: OrderStatus): this {
-    this.data.status = status;
-    return this;
-  }
-  
-  build(): Order {
-    return new Order(this.data);
-  }
-}
-
-const order = new OrderBuilder()
-  .withItems([new OrderItem('prod-1', 2, 50)])
-  .withStatus(OrderStatus.Pending)
-  .build();
-```
-
-## Rule 6: Test Doubles Strategy
-
-**Requirement**: Appropriate mocking per test type.
-
-**Implementation**:
-```typescript
-// Unit tests - Mock everything
-const mockRepo = {
-  save: jest.fn().mockResolvedValue(undefined),
-  findById: jest.fn().mockResolvedValue(order)
-};
-
-// Integration tests - Mock external services only
-const repository = new OrderRepository(realDb);
-jest.mock('../external/PaymentService', () => ({
-  PaymentService: jest.fn().mockImplementation(() => ({
-    process: jest.fn().mockResolvedValue({ success: true })
-  }))
-}));
-
-// E2E tests - No mocks
-// Uses real backend, real DB, real services
-```
-
-## Rule 7: Test Behavior, Not Implementation
-
-**Requirement**: Test observable behavior, not internal state.
-
-**Implementation**:
-```typescript
-// BAD - Tests implementation details
-it('should set processed flag', () => {
-  const processor = new OrderProcessor();
-  processor.process(order);
-  expect((processor as any).processed).toBe(true);
-});
-
-// GOOD - Tests behavior
-it('should mark order as processed', () => {
-  const result = processor.process(order);
-  expect(result.status).toBe(OrderStatus.Processed);
-});
-```
-
-## Rule 8: Edge Cases
-
-**Requirement**: Cover happy path AND edge cases.
-
-**Implementation**:
-```typescript
-describe('calculateDiscount', () => {
-  it('should apply 10% discount for orders over $100', () => { /* ... */ });
-  it('should apply 20% discount for orders over $500', () => { /* ... */ });
-  
-  // Edge cases
-  it('should return zero for $0 order', () => { /* ... */ });
-  it('should return zero for negative amount', () => { /* ... */ });
-  it('should handle maximum discount correctly', () => { /* ... */ });
-});
-```
-
-## Rule 9: Test Isolation
-
-**Requirement**: Tests must not depend on each other.
-
-**Implementation**:
-- Each test sets up its own data
-- Clean up after tests
-- No shared state between tests
-
-```typescript
-beforeEach(async () => {
-  await testDb.cleanup();
-});
-
-afterEach(async () => {
-  await testDb.cleanup();
-});
-```
-
-## Rule 10: Fast Tests
-
-**Requirement**: Tests must be fast.
-
-**Implementation**:
-- Unit tests: < 100ms
-- Integration tests: < 500ms
-- No sleep() in tests
-- Use test databases, not real ones
-
-```typescript
-// BAD - Slow test
-test('should process order', async () => {
-  await processOrder(order);
-  await new Promise(r => setTimeout(r, 1000)); // Artificial delay
-  expect(getOrderStatus(order.id)).toBe('processed');
-});
-
-// GOOD - Fast test
-test('should process order', async () => {
-  await processOrder(order);
-  const status = await getOrderStatus(order.id);
-  expect(status).toBe('processed');
-});
-```
-
-## Rule 11: Maintainable Tests
-
-**Requirement**: Tests must be as maintainable as production code.
-
-**Implementation**:
-- Extract common test utilities
-- Use constants
-- Group related tests with describe blocks
-- Keep tests focused
+- one-test-per-assertion fragmentation
+- asserting implementation details instead of outcomes
+- excessive mocking that hides integration problems
+- flaky timing or environment-coupled tests
+- chasing coverage numbers with low-value tests
 
 ## Enforcement
 
-- Coverage thresholds in CI
-- Test execution time limits
-- Code review for test quality
-- Flaky test detection
+- CI should enforce execution of the relevant test suites
+- reviewers should assess test adequacy based on risk, not only coverage numbers
+- agents must call out residual verification gaps explicitly

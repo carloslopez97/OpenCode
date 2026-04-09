@@ -2,227 +2,113 @@
 
 ## Purpose
 
-These rules define the code review process and ensure consistent quality standards.
+These rules keep review focused on real delivery risk: correctness, security, reliability, maintainability, and verification quality.
 
-## Reviewer Responsibilities
+## Review Priorities
 
-### 1. Pre-Review Checklist
+Review in this order:
 
-Before reviewing, verify:
-- [ ] Code compiles without errors
-- [ ] All tests pass
-- [ ] Linting passes
-- [ ] Type checking passes
-- [ ] PR description explains the change
+1. correctness and data integrity
+2. security and privacy
+3. architecture and boundary compliance
+4. reliability and failure handling
+5. performance regression risk
+6. maintainability and clarity
+7. style and consistency
 
-### 2. Review Focus Areas
+## Required Checks
 
-| Area | What to Check |
-|------|---------------|
-| Correctness | Does it work as intended? |
-| Architecture | Clean architecture compliance |
-| Code Quality | Readability, naming, structure |
-| Testing | Coverage, test quality |
-| Security | Vulnerabilities, data protection |
-| Performance | Efficiency, optimization |
+Before marking work as ready, verify:
 
-## Review Standards
+- the change matches the requested behavior
+- the important acceptance criteria are addressed
+- artifact references are present and coherent
+- verification evidence is appropriate for the risk level
+- unresolved risks or gaps are called out explicitly
 
-### Critical Issues (Block Merge)
+Do not depend on PR metadata alone. Use the available artifacts, contracts, and evidence.
 
-1. **Functional Bugs** - Code doesn't work as specified
-2. **Security Vulnerabilities** - SQL injection, XSS, etc.
-3. **Architecture Violations** - Domain depends on infrastructure
-4. **Missing Tests** - No test coverage for new features
+## Severity Model
 
-### High Issues (Must Fix)
+### Critical
 
-1. **Code Smells** - Duplication, dead code, god classes
-2. **Poor Naming** - Unclear variable/function names
-3. **Error Handling** - Swallowed errors, no logging
-4. **Memory Leaks** - Unclosed resources, listeners
+Must block progress. High likelihood of severe failure or exposure.
 
-### Medium Issues (Should Fix)
+Examples:
 
-1. **Code Style** - Inconsistent formatting
-2. **Missing Comments** - Non-obvious logic undocumented
-3. **Magic Values** - Hardcoded numbers/strings
-4. **Test Quality** - Weak assertions, flaky tests
+- functional bug in the requested behavior
+- security vulnerability
+- major architecture violation
+- missing verification for high-risk behavior
 
-### Low Issues (Consider Fixing)
+### High
 
-1. **Type Safety** - Using `any` instead of specific types
-2. **Minor Duplication** - Similar code that could be extracted
-3. **Console Logging** - Should use proper logger
+Should be fixed before merge or rollout.
 
-## Review Feedback Format
+Examples:
 
-```markdown
-## Code Review: [PR Title]
+- likely regression
+- unsafe error handling
+- broken edge-case behavior
+- meaningful observability or operational gap
 
-### Summary
-Brief overview of what was reviewed.
+### Medium
 
-### Issues Found
+Useful to address soon. Moderate risk or maintainability drag.
 
-#### Critical
-- [ ] **Issue**: Description
-  - **Location**: File:Line
-  - **Suggestion**: How to fix
+Examples:
 
-#### High
-- [ ] **Issue**: Description
-  - **Location**: File:Line
-  - **Suggestion**: How to fix
+- confusing structure
+- avoidable duplication
+- weak but non-blocking test coverage
+- local performance concern without immediate failure risk
 
-### Recommendations
-- Suggestion 1
-- Suggestion 2
+### Low
 
-### What Looks Good
-- Positive observation 1
-- Positive observation 2
+Small improvement with limited near-term impact.
 
-### Decision
-- [ ] Approved
-- [ ] Changes Requested
-- [ ] Blocked
-```
+Examples:
+
+- naming polish
+- minor cleanup
+- consistency nits
+
+## Feedback Standard
+
+Every finding should include:
+
+- severity
+- concrete risk
+- likely impact
+- precise location
+- actionable recommendation
+
+If there are no findings, say so explicitly and mention any remaining uncertainty or testing gaps.
+
+## Review Outcome Format
+
+The review outcome should make these clear:
+
+- overall assessment
+- merge readiness: `ready`, `ready_with_minor_changes`, or `not_ready`
+- severity-ranked findings
+- verification gaps
+- recommended next steps
 
 ## Anti-Patterns to Catch
 
-### 1. Feature Envy
-```typescript
-// BAD - Using another class's data extensively
-class OrderService {
-  calculateTotal(order) {
-    return order.items.reduce(
-      (sum, i) => sum + i.price * i.quantity * (1 - i.discount),
-      0
-    );
-  }
-}
+Avoid approving work that has:
 
-// GOOD - Move logic to Order class
-class Order {
-  get total() {
-    return this.items.reduce((sum, i) => sum + i.subtotal, 0);
-  }
-}
-```
-
-### 2. Primitive Obsession
-```typescript
-// BAD
-function sendEmail(to: string, subject: string, body: string) { }
-
-// GOOD
-function sendEmail(email: Email) { }
-```
-
-### 3. Parallel Inheritance
-```typescript
-// BAD - Duplicate hierarchies
-class Order {}
-class OrderRepository {}
-
-class Shipment {}
-class ShipmentRepository {}
-
-// Good - Shared base or no inheritance
-interface Repository<T> { }
-class OrderRepository implements Repository<Order> { }
-```
-
-### 4. Message Chains
-```typescript
-// BAD
-const city = order.customer.address.city;
-
-// GOOD
-const city = order.shippingAddress.city;
-```
-
-### 5. Switch Statements
-```typescript
-// BAD
-switch (order.status) {
-  case 'pending': /* ... */ break;
-  case 'confirmed': /* ... */ break;
-  case 'cancelled': /* ... */ break;
-}
-
-// GOOD - Polymorphism or strategy pattern
-interface OrderStatusHandler {
-  handle(order: Order): void;
-}
-```
-
-## Security Review
-
-### Must Check
-
-- [ ] Input validation
-- [ ] Authentication/authorization
-- [ ] SQL injection prevention
-- [ ] XSS prevention
-- [ ] CSRF protection
-- [ ] No hardcoded secrets
-
-### Common Vulnerabilities
-
-```typescript
-// BAD - SQL Injection
-const query = `SELECT * FROM users WHERE id = '${userId}'`;
-
-// GOOD - Parameterized query
-const query = 'SELECT * FROM users WHERE id = $1';
-const result = await db.query(query, [userId]);
-
-// BAD - XSS
-element.innerHTML = userInput;
-
-// GOOD - Sanitized or textContent
-element.textContent = userInput;
-```
-
-## Architecture Review
-
-### Checkpoints
-
-1. **Domain Independence**
-   - No infrastructure imports in domain layer
-   - Interfaces in domain, implementations in infrastructure
-
-2. **Dependency Direction**
-   - Dependencies point toward domain
-   - No circular dependencies
-
-3. **Single Responsibility**
-   - Classes have one reason to change
-   - No god classes
-
-4. **Repository Pattern**
-   - Data access through repository interfaces
-   - No direct database calls in use cases
-
-## Review Process
-
-1. **Author** - Pre-submit self-review
-2. **Automated Checks** - CI passes
-3. **Reviewer** - Thorough code review
-4. **Discussion** - Address feedback
-5. **Approval** - Merge or request changes
-
-## Time Limits
-
-- Small changes: Review within 24 hours
-- Medium changes: Review within 48 hours
-- Large changes: Review within 72 hours
+- vague evidence claims
+- silent failure paths
+- hidden coupling across boundaries
+- unowned follow-up risks
+- unreviewed sensitive flows
+- parallel changes that create unresolved merge risk
 
 ## Enforcement
 
-- Block merges for critical issues
-- Require fixes for high issues
-- Track review metrics
-- Regular review retrospectives
+- critical findings block merge-readiness claims
+- high findings require explicit resolution or conscious risk acceptance
+- reviewers should optimize for signal, not volume
+- absence of evidence is not evidence of correctness

@@ -1,6 +1,6 @@
 # Project Context: {project-slug}
 
-> Replace `{project-slug}` with actual project identifier (kebab-case)
+> Replace `{project-slug}` with the actual project identifier in kebab-case.
 
 ## Overview
 
@@ -11,116 +11,86 @@
 - **Created**: YYYY-MM-DD
 - **Last Updated**: YYYY-MM-DD
 
-## Goals
+## Core Context
 
-What this project aims to achieve:
-1. Goal 1
-2. Goal 2
-3. Goal 3
+### Mission
 
-## Requirements
+A short statement of the product or delivery outcome this project exists to achieve.
 
-### Functional Requirements
+### Technical Stack
+
+| Layer | Technology | Notes |
+|-------|------------|-------|
+| Frontend | Example | |
+| Backend | Example | |
+| Database | Example | |
+| Infrastructure | Example | |
+
+### Current Architecture
+
+Provide a compact description of the active architecture and important boundaries.
+
+Example:
+
+```text
+Client -> API -> Application Services -> Domain -> Persistence Adapters
+```
+
+### Active Decisions
+
+| ID | Decision | Date | Rationale |
+|----|----------|------|-----------|
+| D-01 | Example decision | YYYY-MM-DD | Why this decision is currently active |
+
+## Delivery Context
+
+### Confirmed Requirements
 
 | ID | Requirement | Priority | Status |
 |----|-------------|----------|--------|
 | FR-01 | Requirement description | high | pending |
-| FR-02 | Another requirement | medium | pending |
 
-### Non-Functional Requirements
+### Active Constraints
 
-- Performance: < 100ms response time
-- Availability: 99.9% uptime
-- Security: OWASP top 10 compliant
+- Constraint 1
+- Constraint 2
 
-## Tech Stack
+### Known Risks
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | React, TypeScript |
-| Backend | Node.js, Express |
-| Database | PostgreSQL |
-| Cache | Redis |
-| Infrastructure | Docker, AWS |
+| Risk | Severity | Mitigation |
+|------|----------|------------|
+| Example risk | medium | Example mitigation |
 
-## Architecture
+### Open Questions
 
-### High-Level Architecture
+| ID | Question | Status | Next Step |
+|----|----------|--------|-----------|
+| Q-01 | Example question | open | Clarify with stakeholder |
 
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Client    │────▶│   Backend   │────▶│  Database   │
-└─────────────┘     └─────────────┘     └─────────────┘
-                          │
-                          ▼
-                   ┌─────────────┐
-                   │   Cache     │
-                   └─────────────┘
-```
+### Pending Tasks
 
-### Architecture Pattern
+| ID | Task | Owner | Status |
+|----|------|-------|--------|
+| T-01 | Example task | orchestrator | pending |
 
-Clean Architecture with:
-- Domain Layer (entities, value objects, repository interfaces)
-- Application Layer (use cases, services)
-- Infrastructure Layer (persistence, external services)
-- Presentation Layer (API controllers, UI components)
+## Historical Context
 
-## Folder Structure
+### Archived Decisions
 
-```
-src/
-├── domain/
-│   ├── entities/
-│   ├── valueObjects/
-│   ├── repositories/  # Interfaces only
-│   └── services/
-├── application/
-│   ├── useCases/
-│   ├── interfaces/
-│   ├── dtos/
-│   └── services/
-├── infrastructure/
-│   ├── persistence/
-│   ├── external/
-│   └── config/
-└── presentation/
-    ├── controllers/
-    └── handlers/
-```
+Move decisions here when they are no longer active but may still matter for future reasoning.
 
-## Constraints
+### Resolved Risks
 
-- Budget: $X
-- Timeline: X months
-- Team size: X developers
-- Regulatory: GDPR compliant
+Move resolved items here in summary form instead of keeping the active sections bloated.
 
-## Open Questions
+### Learnings
 
-| ID | Question | Status | Decision |
-|----|----------|--------|----------|
-| Q-01 | Should we use GraphQL or REST? | open | TBD |
-| Q-02 | Which cloud provider? | open | TBD |
-
-## Decisions
-
-| ID | Decision | Date | Rationale |
-|----|----------|------|------------|
-| D-01 | Use TypeScript | 2024-01-01 | Type safety, better DX |
-| D-02 | Use PostgreSQL | 2024-01-01 | ACID compliance needed |
-
-## Team
-
-| Role | Name | Contact |
-|------|------|---------|
-| Lead Developer | | |
-| Product Owner | | |
+Capture only compact, reusable lessons.
 
 ## Notes
 
-Any additional context, decisions, or notes go here.
+Use this section for short supporting details that do not belong in the structured sections above.
 
 ---
 
-*This file is maintained by the orchestrator. Updates are made as decisions are finalized and requirements evolve.*
+This file is maintained by the orchestrator. Prefer summaries over long raw history, and keep only active delivery context in the main sections.

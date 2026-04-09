@@ -343,18 +343,61 @@ context:
 
   project_context:
     path: ./context/projects/{project-slug}.md
+    layers:
+      core:
+        description: Minimum shared context required to act safely inside a project
+        sections:
+          - project metadata
+          - project path
+          - technical stack
+          - current architecture
+          - active decisions
+      delivery:
+        description: Current execution context required for delivery coordination
+        sections:
+          - known risks
+          - open questions
+          - pending tasks
+          - active constraints
+      historical:
+        description: Archived context used only when older rationale is needed
+        sections:
+          - closed decisions
+          - resolved risks
+          - previous learnings
     required_for:
-      - orchestrator
-      - architect
-      - backend-developer
-      - frontend-developer
-      - reviewer
-      - tester
-      - devops
-      - product-manager
-      - security-engineer
-      - data-engineer
-      - performance-optimizer
+      orchestrator:
+        - core
+        - delivery
+      architect:
+        - core
+        - delivery
+      backend-developer:
+        - core
+        - delivery
+      frontend-developer:
+        - core
+        - delivery
+      reviewer:
+        - core
+      tester:
+        - core
+        - delivery
+      devops:
+        - core
+        - delivery
+      product-manager:
+        - core
+        - delivery
+      security-engineer:
+        - core
+        - delivery
+      data-engineer:
+        - core
+        - delivery
+      performance-optimizer:
+        - core
+        - delivery
 
   isolation:
     enabled: true
@@ -362,15 +405,26 @@ context:
 
   hydration:
     include:
-      - project metadata
-      - technical stack
-      - architecture decisions
-      - known risks
-      - open questions
-      - pending tasks
+      - layers declared above
     reject_if_missing:
       - project path
       - core stack information
+      - current architecture
+    role_overrides:
+      reviewer:
+        prefer_task_context_pack: true
+      tester:
+        prefer_task_context_pack: true
+      security-engineer:
+        prefer_task_context_pack: true
+      performance-optimizer:
+        prefer_task_context_pack: true
+    compaction:
+      enabled: true
+      summarize_closed_items: true
+      archive_stale_follow_up_tasks: true
+      keep_only_active_open_questions_in_primary_context: true
+      prefer_summaries_over_raw_history: true
 
 # ============================================
 # ORCHESTRATOR CONFIGURATION
@@ -389,13 +443,26 @@ orchestrator:
     require_non_goals_for_risky_tasks: true
     require_verification_evidence: true
     validate_responses: true
+    require_artifact_references_for_non_analysis_work: true
+    reject_unclear_ownership: true
+    reject_missing_definition_of_done: true
+    reject_overlapping_write_surfaces: true
+    require_task_context_pack: true
 
   concurrency:
     enabled: true
-    max_concurrent_tasks: 3
+    default_max_concurrent_tasks: 2
     max_tasks_per_agent: 1
     allow_parallel_only_when_dependencies_clear: true
     allow_parallel_only_when_ownership_isolated: true
+    allow_parallel_sidecars_for_review_and_testing: true
+    policies:
+      unstable_architecture:
+        max_concurrent_tasks: 1
+      isolated_implementation:
+        max_concurrent_tasks: 2
+      isolated_validation_sidecars:
+        max_concurrent_tasks: 3
 
   planning:
     build_task_dag: true
@@ -403,14 +470,30 @@ orchestrator:
     force_explicit_assumptions: true
     split_multi_domain_work: true
     use_specialists_for_high_risk_domains: true
+    require_merge_risk_assessment: true
+    require_dependency_settlement_before_parallelism: true
 
   quality_gates:
-    architecture_review_for_high_risk_changes: true
-    testing_required_for_behavior_changes: true
-    review_required_for_merge_ready_claims: true
-    observability_check_for_operational_changes: true
-    security_review_for_sensitive_flows: true
-    performance_review_for_critical_paths: true
+    enabled: true
+    routing_matrix:
+      architecture_boundary_change:
+        required_agents:
+          - architect
+      behavior_change:
+        required_agents:
+          - tester
+      merge_ready_claim:
+        required_agents:
+          - reviewer
+      operational_change:
+        required_agents:
+          - devops
+      sensitive_flow:
+        required_agents:
+          - security-engineer
+      critical_path_change:
+        required_agents:
+          - performance-optimizer
 
   context_evolution:
     auto_update: true
@@ -418,6 +501,8 @@ orchestrator:
     track_risks: true
     document_learnings: true
     append_follow_up_tasks: true
+    update_only_after_validation: true
+    write_summaries_before_appending_raw_notes: true
 
 # ============================================
 # TASK CONTRACT FORMAT
@@ -435,6 +520,7 @@ task_contract:
     - input
     - expected_output
     - acceptance_criteria
+    - task_context_pack
 
   recommended_context_fields:
     - summary
@@ -454,6 +540,7 @@ task_contract:
     - format
     - definition_of_done
     - verification_evidence
+    - artifact_references
 
   task_types:
     - implementation
@@ -472,6 +559,27 @@ task_contract:
     - high
     - critical
 
+  conditional_requirements:
+    implementation:
+      expected_output:
+        - definition_of_done
+        - verification_evidence
+        - artifact_references
+    design:
+      output_expectations:
+        - alternatives_considered
+        - recommendation
+        - tradeoffs
+    testing:
+      output_expectations:
+        - test_scope
+        - test_results
+        - residual_risks
+    review:
+      output_expectations:
+        - severity_ranked_findings
+        - merge_readiness
+
 # ============================================
 # AGENT RESPONSE FORMAT
 # ============================================
@@ -485,16 +593,29 @@ agent_response:
     - issues
     - suggestions
     - next_steps
+    - artifact_references
+    - verification_status
 
   recommended_fields:
     - verification_notes
     - risks
     - assumptions
 
+  conditional_required_fields:
+    non_analysis:
+      - verification_evidence
+    medium_or_higher_risk:
+      - risks
+
   status_values:
     - completed
     - blocked
     - needs_clarification
+
+  verification_status_values:
+    - verified
+    - partially_verified
+    - not_verified
 
 # ============================================
 # FAILURE HANDLING
@@ -516,6 +637,10 @@ failure_handling:
   repeated_failure:
     description: Same task fails multiple times
     action: Reduce scope, revisit ownership, or change execution strategy
+    max_retries: 2
+    retry_with_narrower_scope: true
+    escalate_to_user_after: 2
+    prefer_reassigning_to_specialist_when_mismatch_detected: true
 
 # ============================================
 # HARD CONSTRAINTS
@@ -525,7 +650,8 @@ hard_constraints:
   - orchestrator_never_writes_code: true
   - agents_never_modify_rules: true
   - no_overlapping_responsibilities: true
-  - everything_is_modular: true
+  - dependency_direction_must_be_explicit: true
+  - overlapping_write_ownership_is_forbidden: true
   - context_isolation_enforced: true
   - evidence_required_for_completion_claims: true
 
