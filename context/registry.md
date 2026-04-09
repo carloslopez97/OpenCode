@@ -19,16 +19,6 @@ This file tracks all projects managed by the orchestrator system.
 ### Projects
 
 <!-- Add new projects below -->
-- slug: homebuilder-3d
-  name: HomeBuilder 3D
-  description: Web-based 3D house designer with drag-drop functionality
-  path: C:/Repos/HomeBuilder 3D
-  status: active
-  created: 2026-04-08
-  tech_stack:
-    - React
-    - TypeScript
-    - Vite
 
 Use this template to add projects:
 
