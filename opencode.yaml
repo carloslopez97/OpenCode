@@ -1,0 +1,541 @@
+# OpenCode Configuration
+# Elite multi-agent orchestration tuned for higher autonomy, stronger quality gates,
+# better cross-agent handoffs, safer delivery, and specialist escalation paths.
+
+version: "2.1"
+
+# ============================================
+# MODE CONFIGURATION
+# ============================================
+
+modes:
+  default: orchestrator
+  available:
+    - name: orchestrator
+      description: Principal-engineer-style coordinator for multi-agent delivery
+      rules:
+        - ./rules/architecture-rules.md
+        - ./rules/coding-rules.md
+        - ./rules/testing-rules.md
+        - ./rules/review-rules.md
+    - name: architect
+      description: Architecture design, technical decision framing, and implementation guidance
+    - name: backend-developer
+      description: Backend implementation, reliability, and integration execution
+    - name: frontend-developer
+      description: UI delivery, state management, and frontend integration execution
+    - name: reviewer
+      description: Severity-first review for correctness, security, and maintainability
+    - name: tester
+      description: Risk-based test strategy, regression prevention, and confidence reporting
+    - name: devops
+      description: CI/CD, infrastructure, observability, and release safety
+    - name: product-manager
+      description: Product framing, prioritization, scope control, and acceptance definition
+    - name: security-engineer
+      description: Security assessment, threat review, and practical hardening guidance
+    - name: data-engineer
+      description: Data modeling, pipeline design, and data quality engineering
+    - name: performance-optimizer
+      description: Bottleneck analysis, optimization planning, and performance verification
+
+# ============================================
+# AGENTS
+# ============================================
+
+agents:
+  - name: architect
+    description: Turns user intent into implementation-ready technical direction
+    mode: agent
+    responsibilities:
+      - System boundary design
+      - Interface and contract definition
+      - Pattern selection and tradeoff analysis
+      - Incremental delivery planning
+      - Architectural risk identification
+    rules:
+      - ./rules/architecture-rules.md
+      - ./skills/clean-architecture/SKILL.md
+      - ./skills/api-design/SKILL.md
+      - ./skills/naming-conventions/SKILL.md
+      - ./skills/code-quality/SKILL.md
+    context:
+      - ./context/registry.md
+      - ./context/projects/{project-slug}.md
+
+  - name: backend-developer
+    description: Implements backend behavior with strong reliability and maintainability
+    mode: agent
+    responsibilities:
+      - API and handler implementation
+      - Application and domain orchestration
+      - Persistence and integration adapters
+      - Operationally safe backend changes
+      - Verification-aware implementation
+    rules:
+      - ./rules/coding-rules.md
+      - ./rules/architecture-rules.md
+      - ./skills/clean-architecture/SKILL.md
+      - ./skills/code-quality/SKILL.md
+      - ./skills/api-design/SKILL.md
+      - ./skills/naming-conventions/SKILL.md
+    context:
+      - ./context/registry.md
+      - ./context/projects/{project-slug}.md
+
+  - name: frontend-developer
+    description: Delivers robust, accessible, production-ready user interfaces
+    mode: agent
+    responsibilities:
+      - UI component and page implementation
+      - State management and data flow handling
+      - API integration and UI hardening
+      - Accessibility and responsive behavior
+      - Frontend performance awareness
+    rules:
+      - ./rules/coding-rules.md
+      - ./skills/code-quality/SKILL.md
+      - ./skills/naming-conventions/SKILL.md
+    context:
+      - ./context/registry.md
+      - ./context/projects/{project-slug}.md
+
+  - name: reviewer
+    description: Applies severity-based review to stop bugs, regressions, and architectural drift
+    mode: agent
+    responsibilities:
+      - Correctness and regression review
+      - Architecture compliance verification
+      - Security and reliability review
+      - Maintainability assessment
+      - Merge readiness recommendation
+    rules:
+      - ./rules/review-rules.md
+      - ./rules/architecture-rules.md
+      - ./rules/coding-rules.md
+      - ./skills/code-quality/SKILL.md
+      - ./skills/clean-architecture/SKILL.md
+      - ./skills/api-design/SKILL.md
+      - ./skills/naming-conventions/SKILL.md
+    context:
+      - ./context/registry.md
+      - ./context/projects/{project-slug}.md
+
+  - name: tester
+    description: Builds confidence through risk-based testing and explicit verification
+    mode: agent
+    responsibilities:
+      - Test strategy selection
+      - Unit, integration, and E2E test authoring
+      - Regression prevention
+      - Coverage prioritization by risk
+      - Residual risk reporting
+    rules:
+      - ./rules/testing-rules.md
+      - ./rules/architecture-rules.md
+      - ./skills/testing/SKILL.md
+      - ./skills/clean-architecture/SKILL.md
+      - ./skills/code-quality/SKILL.md
+    context:
+      - ./context/registry.md
+      - ./context/projects/{project-slug}.md
+
+  - name: devops
+    description: Makes delivery, infrastructure, and operations safer and more repeatable
+    mode: agent
+    responsibilities:
+      - CI/CD pipeline design
+      - Infrastructure as code
+      - Deployment and environment automation
+      - Monitoring and operational guardrails
+      - Release risk mitigation
+    rules:
+      - ./rules/coding-rules.md
+      - ./rules/review-rules.md
+      - ./skills/code-quality/SKILL.md
+    context:
+      - ./context/registry.md
+      - ./context/projects/{project-slug}.md
+
+  - name: product-manager
+    description: Clarifies product intent, prioritizes scope, and sharpens acceptance criteria
+    mode: agent
+    responsibilities:
+      - Problem framing and requirement shaping
+      - Prioritization and scope control
+      - Acceptance criteria definition
+      - Non-goal identification
+      - Delivery recommendation support
+    rules:
+      - ./rules/review-rules.md
+    context:
+      - ./context/registry.md
+      - ./context/projects/{project-slug}.md
+
+  - name: security-engineer
+    description: Reduces practical security risk across application and platform changes
+    mode: agent
+    responsibilities:
+      - Threat modeling and trust-boundary analysis
+      - Security review of code and configuration
+      - Control recommendation and hardening guidance
+      - Authentication and authorization assessment
+      - Sensitive data exposure review
+    rules:
+      - ./rules/review-rules.md
+      - ./rules/coding-rules.md
+    context:
+      - ./context/registry.md
+      - ./context/projects/{project-slug}.md
+
+  - name: data-engineer
+    description: Designs robust data models, pipelines, and quality controls
+    mode: agent
+    responsibilities:
+      - Data model design
+      - ETL and ELT workflow design
+      - Data quality and reconciliation planning
+      - Lineage and consumer impact assessment
+      - Data pipeline reliability improvements
+    rules:
+      - ./rules/architecture-rules.md
+      - ./rules/coding-rules.md
+    context:
+      - ./context/registry.md
+      - ./context/projects/{project-slug}.md
+
+  - name: performance-optimizer
+    description: Finds and prioritizes high-value performance improvements
+    mode: agent
+    responsibilities:
+      - Bottleneck identification
+      - Optimization planning
+      - Performance tradeoff analysis
+      - Measurement strategy definition
+      - Regression prevention guidance
+    rules:
+      - ./rules/review-rules.md
+      - ./rules/coding-rules.md
+    context:
+      - ./context/registry.md
+      - ./context/projects/{project-slug}.md
+
+# ============================================
+# SKILLS
+# ============================================
+
+skills:
+  - name: clean-architecture
+    description: Clean architecture principles and layered system design
+    rules:
+      - ./skills/clean-architecture/SKILL.md
+    available_for:
+      - orchestrator
+      - architect
+      - backend-developer
+      - reviewer
+      - tester
+      - data-engineer
+
+  - name: code-quality
+    description: Code quality principles, maintainability, and reviewability
+    rules:
+      - ./skills/code-quality/SKILL.md
+    available_for:
+      - orchestrator
+      - architect
+      - backend-developer
+      - frontend-developer
+      - reviewer
+      - tester
+      - devops
+      - security-engineer
+      - data-engineer
+      - performance-optimizer
+
+  - name: testing
+    description: Testing strategy and implementation patterns
+    rules:
+      - ./skills/testing/SKILL.md
+    available_for:
+      - orchestrator
+      - tester
+      - reviewer
+      - performance-optimizer
+      - security-engineer
+
+  - name: api-design
+    description: API design principles and contract quality
+    rules:
+      - ./skills/api-design/SKILL.md
+    available_for:
+      - orchestrator
+      - architect
+      - backend-developer
+      - reviewer
+      - security-engineer
+
+  - name: naming-conventions
+    description: Naming conventions for clarity and consistency
+    rules:
+      - ./skills/naming-conventions/SKILL.md
+    available_for:
+      - orchestrator
+      - architect
+      - backend-developer
+      - frontend-developer
+      - reviewer
+      - data-engineer
+
+# ============================================
+# RULES
+# ============================================
+
+rules:
+  - name: architecture-rules
+    description: Architectural integrity, dependency direction, and modularity
+    file: ./rules/architecture-rules.md
+    applies_to:
+      - architect
+      - backend-developer
+      - reviewer
+      - tester
+      - data-engineer
+
+  - name: coding-rules
+    description: Coding standards for clarity, maintainability, and implementation discipline
+    file: ./rules/coding-rules.md
+    applies_to:
+      - backend-developer
+      - frontend-developer
+      - reviewer
+      - devops
+      - security-engineer
+      - data-engineer
+      - performance-optimizer
+
+  - name: testing-rules
+    description: Testing standards, confidence targets, and verification expectations
+    file: ./rules/testing-rules.md
+    applies_to:
+      - tester
+      - reviewer
+      - security-engineer
+      - performance-optimizer
+
+  - name: review-rules
+    description: Review quality gates and severity-based assessment
+    file: ./rules/review-rules.md
+    applies_to:
+      - reviewer
+      - devops
+      - product-manager
+      - security-engineer
+      - performance-optimizer
+
+# ============================================
+# CONTEXT MANAGEMENT
+# ============================================
+
+context:
+  always_load:
+    - ./context/registry.md
+
+  project_context:
+    path: ./context/projects/{project-slug}.md
+    required_for:
+      - orchestrator
+      - architect
+      - backend-developer
+      - frontend-developer
+      - reviewer
+      - tester
+      - devops
+      - product-manager
+      - security-engineer
+      - data-engineer
+      - performance-optimizer
+
+  isolation:
+    enabled: true
+    description: Each project maintains isolated context and decisions
+
+  hydration:
+    include:
+      - project metadata
+      - technical stack
+      - architecture decisions
+      - known risks
+      - open questions
+      - pending tasks
+    reject_if_missing:
+      - project path
+      - core stack information
+
+# ============================================
+# ORCHESTRATOR CONFIGURATION
+# ============================================
+
+orchestrator:
+  project_detection:
+    auto_detect: true
+    ask_if_unclear: true
+    create_if_missing: true
+
+  delegation:
+    use_task_contracts: true
+    require_acceptance_criteria: true
+    require_dependencies: true
+    require_non_goals_for_risky_tasks: true
+    require_verification_evidence: true
+    validate_responses: true
+
+  concurrency:
+    enabled: true
+    max_concurrent_tasks: 3
+    max_tasks_per_agent: 1
+    allow_parallel_only_when_dependencies_clear: true
+    allow_parallel_only_when_ownership_isolated: true
+
+  planning:
+    build_task_dag: true
+    prioritize_by_risk_and_value: true
+    force_explicit_assumptions: true
+    split_multi_domain_work: true
+    use_specialists_for_high_risk_domains: true
+
+  quality_gates:
+    architecture_review_for_high_risk_changes: true
+    testing_required_for_behavior_changes: true
+    review_required_for_merge_ready_claims: true
+    observability_check_for_operational_changes: true
+    security_review_for_sensitive_flows: true
+    performance_review_for_critical_paths: true
+
+  context_evolution:
+    auto_update: true
+    track_decisions: true
+    track_risks: true
+    document_learnings: true
+    append_follow_up_tasks: true
+
+# ============================================
+# TASK CONTRACT FORMAT
+# ============================================
+
+task_contract:
+  required_fields:
+    - task_id
+    - project
+    - assigned_to
+    - task_type
+    - priority
+    - dependencies
+    - context
+    - input
+    - expected_output
+    - acceptance_criteria
+
+  recommended_context_fields:
+    - summary
+    - requirements
+    - constraints
+    - decisions
+    - risks
+    - assumptions
+
+  recommended_input_fields:
+    - description
+    - artifacts
+    - non_goals
+
+  recommended_expected_output_fields:
+    - type
+    - format
+    - definition_of_done
+    - verification_evidence
+
+  task_types:
+    - implementation
+    - design
+    - testing
+    - review
+    - devops
+    - product
+    - security
+    - data
+    - performance
+
+  priority_levels:
+    - low
+    - medium
+    - high
+    - critical
+
+# ============================================
+# AGENT RESPONSE FORMAT
+# ============================================
+
+agent_response:
+  required_fields:
+    - task_id
+    - status
+    - summary
+    - output
+    - issues
+    - suggestions
+    - next_steps
+
+  recommended_fields:
+    - verification_notes
+    - risks
+    - assumptions
+
+  status_values:
+    - completed
+    - blocked
+    - needs_clarification
+
+# ============================================
+# FAILURE HANDLING
+# ============================================
+
+failure_handling:
+  needs_clarification:
+    description: Agent needs more information before producing safe output
+    action: Orchestrator resolves ambiguity and retries with a tighter contract
+
+  blocked:
+    description: Agent is blocked by missing artifact, dependency, or external factor
+    action: Orchestrator isolates blocker, creates an unblock task, and resumes safe dependents
+
+  completed:
+    description: Agent reports task completion
+    action: Orchestrator validates evidence, integrates output, and updates context
+
+  repeated_failure:
+    description: Same task fails multiple times
+    action: Reduce scope, revisit ownership, or change execution strategy
+
+# ============================================
+# HARD CONSTRAINTS
+# ============================================
+
+hard_constraints:
+  - orchestrator_never_writes_code: true
+  - agents_never_modify_rules: true
+  - no_overlapping_responsibilities: true
+  - everything_is_modular: true
+  - context_isolation_enforced: true
+  - evidence_required_for_completion_claims: true
+
+# ============================================
+# NOTES
+# ============================================
+
+notes:
+  - Agents are identified by their mode and are expected to operate with explicit ownership.
+  - Task contracts are structured to support deterministic delegation and safer retries.
+  - Every project maintains isolated context to prevent cross-project contamination.
+  - The orchestrator should prefer small, verifiable tasks over large ambiguous delegations.
+  - High-risk work should accumulate design, testing, review, and specialist evidence before being considered complete.
